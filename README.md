@@ -209,10 +209,6 @@ This plugin brings simple graph traversals to OpenSearch.
 
 The plugin is integrated as a git subtree from the [Graphlet-AI/open-graph](https://github.com/Graphlet-AI/open-graph) repository, allowing for independent development while maintaining integration with Florian's email processing pipeline.
 
-### Reference Implementation
-
-The project also includes YangDB (`src/yang-db/`) as a reference implementation. YangDB is a mature Kotlin-based graph database plugin for OpenSearch that demonstrates advanced graph query capabilities and serves as architectural guidance for the open-graph plugin development. It is integrated as a git subtree from [Graphlet-AI/yang-db](https://github.com/Graphlet-AI/yang-db).
-
 ## Data Storage
 
 Fetched threads are saved as JSON files with the following structure:
