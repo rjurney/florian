@@ -41,7 +41,7 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
 ignore_missing_imports = true
-exclude = ["site-packages"]
+exclude = ["site-packages", ".*mlx.*"]
 
 [[tool.mypy.overrides]]
 module = [
@@ -54,3 +54,6 @@ module = [
 ]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "mlx.*"
+ignore_errors = true

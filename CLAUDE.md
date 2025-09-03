@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 - Test baml_src code: `baml-cli test`
 - Test all: `poetry run pytest tests/`
 - Test single: `poetry run pytest tests/path_to_test.py::test_name`
-- Lint: `pre-commit`, `poetry run flake8 src tests`
+- Lint: `pre-commit`, `poetry run flake8 src tests` Do not use `--all-files`
 - Format: `poetry run black src tests`, `poetry run isort src tests`
 - Type check: `poetry run mypy src tests`
 

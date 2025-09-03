@@ -11,7 +11,11 @@ class OpenSearchClient:
     """Client for interacting with OpenSearch to index and search email threads."""
 
     def __init__(
-        self, host: str = "localhost", port: int = 9200, use_ssl: bool = False
+        self,
+        host: str = "localhost",
+        port: int = 9200,
+        use_ssl: bool = False,
+        embedding_dim: int = 1536,
     ):
         """Initialize OpenSearch client.
 
@@ -32,6 +36,7 @@ class OpenSearchClient:
             ssl_show_warn=False,
         )
         self.index_name = "gmail-threads"
+        self.embedding_dim = embedding_dim
 
     def create_index(self, recreate: bool = False):
         """Create the Gmail threads index with appropriate mappings.
@@ -51,6 +56,8 @@ class OpenSearchClient:
             "settings": {
                 "number_of_shards": 1,
                 "number_of_replicas": 0,
+                "index.knn": True,
+                "index.knn.space_type": "cosinesimil",
                 "analysis": {
                     "analyzer": {
                         "email_analyzer": {
@@ -106,6 +113,26 @@ class OpenSearchClient:
                     "labels": {"type": "keyword"},
                     "thread_message_count": {"type": "integer"},
                     "thread_position": {"type": "integer"},
+                    "subject_embedding": {
+                        "type": "knn_vector",
+                        "dimension": self.embedding_dim,
+                        "method": {
+                            "name": "hnsw",
+                            "space_type": "cosinesimil",
+                            "engine": "nmslib",
+                            "parameters": {"ef_construction": 128, "m": 24},
+                        },
+                    },
+                    "body_embedding": {
+                        "type": "knn_vector",
+                        "dimension": self.embedding_dim,
+                        "method": {
+                            "name": "hnsw",
+                            "space_type": "cosinesimil",
+                            "engine": "nmslib",
+                            "parameters": {"ef_construction": 128, "m": 24},
+                        },
+                    },
                 }
             },
         }
@@ -186,27 +213,41 @@ class OpenSearchClient:
                     except Exception:
                         iso_date = None
 
+                # Build document
+                doc_source = {
+                    "id": message.get("id"),
+                    "thread_id": thread_id,
+                    "message_id": message.get("id"),
+                    "subject": message.get("headers", {}).get("subject", ""),
+                    "from": message.get("headers", {}).get("from", ""),
+                    "to": message.get("headers", {}).get("to", ""),
+                    "cc": message.get("headers", {}).get("cc", ""),
+                    "bcc": message.get("headers", {}).get("bcc", ""),
+                    "date": iso_date if iso_date else None,
+                    "timestamp": iso_date,
+                    "body_text": message.get("body", {}).get("text", ""),
+                    "body_html": message.get("body", {}).get("html", ""),
+                    "snippet": message.get("snippet", ""),
+                    "labels": message.get("labelIds", []),
+                    "thread_message_count": message_count,
+                    "thread_position": position,
+                }
+
+                # Add embeddings if present
+                if "embeddings" in message:
+                    if "subject_embedding" in message["embeddings"]:
+                        doc_source["subject_embedding"] = message["embeddings"][
+                            "subject_embedding"
+                        ]
+                    if "body_embedding" in message["embeddings"]:
+                        doc_source["body_embedding"] = message["embeddings"][
+                            "body_embedding"
+                        ]
+
                 doc = {
                     "_index": self.index_name,
                     "_id": message.get("id"),
-                    "_source": {
-                        "id": message.get("id"),
-                        "thread_id": thread_id,
-                        "message_id": message.get("id"),
-                        "subject": message.get("headers", {}).get("subject", ""),
-                        "from": message.get("headers", {}).get("from", ""),
-                        "to": message.get("headers", {}).get("to", ""),
-                        "cc": message.get("headers", {}).get("cc", ""),
-                        "bcc": message.get("headers", {}).get("bcc", ""),
-                        "date": iso_date if iso_date else None,
-                        "timestamp": iso_date,
-                        "body_text": message.get("body", {}).get("text", ""),
-                        "body_html": message.get("body", {}).get("html", ""),
-                        "snippet": message.get("snippet", ""),
-                        "labels": message.get("labelIds", []),
-                        "thread_message_count": message_count,
-                        "thread_position": position,
-                    },
+                    "_source": doc_source,
                 }
                 documents.append(doc)
 
@@ -262,6 +303,122 @@ class OpenSearchClient:
             return response
         except Exception as e:
             print(f"Search error: {e}")
+            return None
+
+    def knn_search(
+        self,
+        vector: list,
+        field: str = "body_embedding",
+        k: int = 10,
+        min_score: float = 0.0,
+    ):
+        """Perform k-NN vector similarity search.
+
+        Parameters
+        ----------
+        vector : list
+            Query vector for similarity search
+        field : str
+            Vector field to search ('subject_embedding' or 'body_embedding')
+        k : int
+            Number of nearest neighbors to return
+        min_score : float
+            Minimum similarity score threshold
+
+        Returns
+        -------
+        dict
+            Search results with similarity scores
+        """
+        search_body = {
+            "size": k,
+            "query": {
+                "knn": {
+                    field: {
+                        "vector": vector,
+                        "k": k,
+                    }
+                }
+            },
+            "min_score": min_score,
+            "_source": {
+                "excludes": ["subject_embedding", "body_embedding", "body_html"]
+            },
+        }
+
+        try:
+            response = self.client.search(index=self.index_name, body=search_body)
+            return response
+        except Exception as e:
+            print(f"kNN search error: {e}")
+            return None
+
+    def hybrid_search(
+        self,
+        query: str,
+        vector: list,
+        field: str = "body_embedding",
+        k: int = 10,
+        text_weight: float = 0.3,
+        vector_weight: float = 0.7,
+    ):
+        """Perform hybrid text + vector search.
+
+        Parameters
+        ----------
+        query : str
+            Text search query
+        vector : list
+            Query vector for similarity search
+        field : str
+            Vector field to search
+        k : int
+            Number of results to return
+        text_weight : float
+            Weight for text search (0-1)
+        vector_weight : float
+            Weight for vector search (0-1)
+
+        Returns
+        -------
+        dict
+            Combined search results
+        """
+        search_body = {
+            "size": k,
+            "query": {
+                "bool": {
+                    "should": [
+                        {
+                            "multi_match": {
+                                "query": query,
+                                "fields": ["subject^2", "body_text", "from", "to"],
+                                "boost": text_weight,
+                            }
+                        },
+                        {
+                            "knn": {
+                                field: {
+                                    "vector": vector,
+                                    "k": k,
+                                    "boost": vector_weight,
+                                }
+                            }
+                        },
+                    ]
+                }
+            },
+            "_source": {
+                "excludes": ["subject_embedding", "body_embedding", "body_html"]
+            },
+            "highlight": {"fields": {"body_text": {}, "subject": {}}},
+        }
+
+        try:
+            response = self.client.search(index=self.index_name, body=search_body)
+            return response
+        except Exception as e:
+            print(f"Hybrid search error: {e}")
             return None
 
     def get_stats(self):

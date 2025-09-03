@@ -5,6 +5,7 @@ from pathlib import Path
 
 import click
 
+from florian.embeddings import EmailEmbedder
 from florian.gmail.auth import GmailAuth
 from florian.gmail.client import GmailClient
 from florian.opensearch.client import OpenSearchClient
@@ -471,6 +472,179 @@ def opensearch_search(query, size):
 
     except Exception as e:
         click.echo(f"✗ Search error: {e}", err=True)
+
+
+@cli.group()
+def embeddings():
+    """Email embedding commands."""
+    pass
+
+
+@embeddings.command()
+@click.option(
+    "--input", "-i", default="data/gmail_threads.json", help="Input threads file"
+)
+@click.option(
+    "--output", "-o", default="data/gmail_threads_embedded.json", help="Output file"
+)
+@click.option(
+    "--model", "-m", default="Qwen/Qwen3-Embedding-4B", help="Embedding model name"
+)
+def generate(input, output, model):
+    """Generate embeddings for email threads."""
+    click.echo(f"Loading embedding model: {model}")
+    embedder = EmailEmbedder(model_name=model)
+
+    click.echo(f"Processing threads from {input}")
+    threads = embedder.embed_threads(threads_file=input, output_file=output)
+
+    if threads:
+        click.echo(f"✓ Successfully generated embeddings for {len(threads)} threads")
+    else:
+        click.echo("✗ Failed to generate embeddings", err=True)
+
+
+@embeddings.command()
+@click.argument("query")
+@click.option("--size", "-n", default=10, help="Number of results")
+@click.option(
+    "--field",
+    "-f",
+    default="body",
+    type=click.Choice(["subject", "body"]),
+    help="Field to search",
+)
+def vector_search(query, size, field):
+    """Search emails using vector similarity."""
+    # Initialize embedder and OpenSearch client
+    embedder = EmailEmbedder()
+    client = OpenSearchClient(embedding_dim=embedder.embedding_dim)
+
+    # Check if OpenSearch is accessible
+    if not client.health_check():
+        click.echo(
+            "✗ OpenSearch is not accessible. Run 'flo opensearch setup --start' first",
+            err=True,
+        )
+        return
+
+    click.echo(f"Searching for: {query}")
+    click.echo(f"Using {field} embeddings for similarity search")
+
+    # Generate query embedding
+    query_embedding = embedder.embed_text(query)[0].tolist()
+
+    # Perform kNN search
+    try:
+        results = client.knn_search(
+            vector=query_embedding,
+            field=f"{field}_embedding",
+            k=size,
+        )
+
+        if not results:
+            click.echo("No results found")
+            return
+
+        hits = results.get("hits", {}).get("hits", [])
+        total = results.get("hits", {}).get("total", {}).get("value", 0)
+
+        click.echo(f"\n✓ Found {total} similar messages (showing {len(hits)})\n")
+
+        for i, hit in enumerate(hits, 1):
+            source = hit["_source"]
+            score = hit["_score"]
+
+            click.echo(f"{i}. Message ID: {source.get('id', 'Unknown')}")
+            click.echo(f"   Thread ID: {source.get('thread_id', 'Unknown')}")
+            click.echo(f"   Subject: {source.get('subject', 'No subject')}")
+            click.echo(f"   From: {source.get('from', 'Unknown')}")
+            click.echo(f"   Date: {source.get('date', 'Unknown')}")
+            click.echo(f"   Similarity Score: {score:.4f}")
+
+            # Show snippet
+            snippet = source.get("snippet", "")[:200]
+            if snippet:
+                click.echo(f"   Preview: {snippet}...")
+            click.echo()
+
+    except Exception as e:
+        click.echo(f"✗ Vector search error: {e}", err=True)
+
+
+@embeddings.command()
+@click.argument("query")
+@click.option("--size", "-n", default=10, help="Number of results")
+@click.option("--text-weight", "-t", default=0.3, help="Weight for text search (0-1)")
+@click.option(
+    "--vector-weight", "-v", default=0.7, help="Weight for vector search (0-1)"
+)
+def hybrid_search(query, size, text_weight, vector_weight):
+    """Hybrid text + vector search."""
+    # Initialize embedder and OpenSearch client
+    embedder = EmailEmbedder()
+    client = OpenSearchClient(embedding_dim=embedder.embedding_dim)
+
+    # Check if OpenSearch is accessible
+    if not client.health_check():
+        click.echo(
+            "✗ OpenSearch is not accessible. Run 'flo opensearch setup --start' first",
+            err=True,
+        )
+        return
+
+    click.echo(f"Searching for: {query}")
+    click.echo(f"Text weight: {text_weight}, Vector weight: {vector_weight}")
+
+    # Generate query embedding
+    query_embedding = embedder.embed_text(query)[0].tolist()
+
+    # Perform hybrid search
+    try:
+        results = client.hybrid_search(
+            query=query,
+            vector=query_embedding,
+            field="body_embedding",
+            k=size,
+            text_weight=text_weight,
+            vector_weight=vector_weight,
+        )
+
+        if not results:
+            click.echo("No results found")
+            return
+
+        hits = results.get("hits", {}).get("hits", [])
+        total = results.get("hits", {}).get("total", {}).get("value", 0)
+
+        click.echo(f"\n✓ Found {total} matching messages (showing {len(hits)})\n")
+
+        for i, hit in enumerate(hits, 1):
+            source = hit["_source"]
+            score = hit["_score"]
+
+            click.echo(f"{i}. Message ID: {source.get('id', 'Unknown')}")
+            click.echo(f"   Thread ID: {source.get('thread_id', 'Unknown')}")
+            click.echo(f"   Subject: {source.get('subject', 'No subject')}")
+            click.echo(f"   From: {source.get('from', 'Unknown')}")
+            click.echo(f"   Date: {source.get('date', 'Unknown')}")
+            click.echo(f"   Score: {score:.4f}")
+
+            # Show highlights if available
+            highlights = hit.get("highlight", {})
+            if highlights:
+                for field, matches in highlights.items():
+                    if matches:
+                        click.echo(f"   Match in {field}: {matches[0][:150]}...")
+
+            # Show snippet if no highlights
+            elif source.get("snippet"):
+                snippet = source.get("snippet", "")[:200]
+                click.echo(f"   Preview: {snippet}...")
+            click.echo()
+
+    except Exception as e:
+        click.echo(f"✗ Hybrid search error: {e}", err=True)
 
 
 if __name__ == "__main__":
