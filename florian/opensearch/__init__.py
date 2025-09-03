@@ -1,0 +1,1 @@
+"""OpenSearch integration for Florian."""

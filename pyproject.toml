@@ -1,0 +1,49 @@
+[project]
+name = "florian"
+version = "0.1.0"
+description = "Experiments in Email and RAG"
+authors = [
+    {name = "Russell Jurney",email = "russell.jurney@gmail.com"}
+]
+license = {text = "COMMERCIAL"}
+readme = "README.md"
+requires-python = ">=3.12,<4"
+dependencies = [
+    "google-api-python-client (>=2.181.0,<3.0.0)",
+    "google-auth-httplib2 (>=0.2.0,<0.3.0)",
+    "google-auth-oauthlib (>=1.2.2,<2.0.0)",
+    "click (>=8.2.1,<9.0.0)",
+    "opensearch-py (>=3.0.0,<4.0.0)"
+]
+
+
+[project.scripts]
+flo = "florian.cli:cli"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+black = "^25.1.0"
+isort = "^6.0.1"
+flake8 = "^7.3.0"
+mypy = "^1.17.1"
+pre-commit = "^4.3.0"
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "google_auth_oauthlib.*",
+    "googleapiclient.*",
+    "google.auth.*",
+    "google.oauth2.*"
+]
+ignore_missing_imports = true
+
