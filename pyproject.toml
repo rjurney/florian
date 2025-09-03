@@ -17,7 +17,6 @@ dependencies = [
     "sentence-transformers (>=3.0.0,<4.0.0)",
     "torch (>=2.0.0,<3.0.0)",
     "numpy (>=1.24.0,<2.0.0)",
-    "mlx (>=0.29.0,<0.30.0)"
 ]
 
 
@@ -41,19 +40,13 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
 ignore_missing_imports = true
-exclude = ["site-packages", ".*mlx.*"]
+exclude = ["site-packages"]
 
 [[tool.mypy.overrides]]
 module = [
     "google_auth_oauthlib.*",
     "googleapiclient.*",
     "google.auth.*",
-    "google.oauth2.*",
-    "mlx.*",
-    "mlx.core.*"
+    "google.oauth2.*"
 ]
 ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "mlx.*"
-ignore_errors = true
