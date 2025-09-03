@@ -8,7 +8,7 @@ readme = "README.md"
 packages = [{include = "florian", from = "src"}]
 
 [tool.poetry.dependencies]
-python = ">=3.12,<4"
+python = ">=3.12,<3.14"
 google-api-python-client = ">=2.181.0,<3.0.0"
 google-auth-httplib2 = ">=0.2.0,<0.3.0"
 google-auth-oauthlib = ">=1.2.2,<2.0.0"
@@ -19,6 +19,7 @@ torch = ">=2.0.0,<3.0.0"
 numpy = ">=1.24.0,<2.0.0"
 graphiti-core = {version = "^0.20.1", extras = ["kuzu"]}
 kuzu = "^0.11.2"
+dspy = "^3.0.3"
 
 [tool.poetry.group.dev.dependencies]
 black = "^25.1.0"
