@@ -90,8 +90,16 @@ class OpenSearchClient:
                         "analyzer": "email_analyzer",
                         "fields": {"keyword": {"type": "keyword"}},
                     },
-                    "date": {"type": "date"},
-                    "timestamp": {"type": "date"},
+                    "date": {
+                        "type": "date",
+                        "null_value": None,
+                        "ignore_malformed": True,
+                    },
+                    "timestamp": {
+                        "type": "date",
+                        "null_value": None,
+                        "ignore_malformed": True,
+                    },
                     "body_text": {"type": "text", "analyzer": "standard"},
                     "body_html": {"type": "text", "analyzer": "standard"},
                     "snippet": {"type": "text"},
@@ -167,16 +175,16 @@ class OpenSearchClient:
             for position, message in enumerate(messages):
                 # Parse date to ISO format
                 date_str = message.get("headers", {}).get("date", "")
-                timestamp = None
+                iso_date = None
                 if date_str:
                     try:
                         # Try to parse the date
                         from email.utils import parsedate_to_datetime
 
                         dt = parsedate_to_datetime(date_str)
-                        timestamp = dt.isoformat()
+                        iso_date = dt.isoformat()
                     except Exception:
-                        timestamp = None
+                        iso_date = None
 
                 doc = {
                     "_index": self.index_name,
@@ -190,8 +198,8 @@ class OpenSearchClient:
                         "to": message.get("headers", {}).get("to", ""),
                         "cc": message.get("headers", {}).get("cc", ""),
                         "bcc": message.get("headers", {}).get("bcc", ""),
-                        "date": message.get("headers", {}).get("date", ""),
-                        "timestamp": timestamp,
+                        "date": iso_date if iso_date else None,
+                        "timestamp": iso_date,
                         "body_text": message.get("body", {}).get("text", ""),
                         "body_html": message.get("body", {}).get("html", ""),
                         "snippet": message.get("snippet", ""),
