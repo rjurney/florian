@@ -20,8 +20,13 @@ cd florian
 2. Create a virtual environment:
 
 ```bash
+conda create -n florian python=3.12 -y
+conda activate florian
+```
+
+```bash
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate
 ```
 
 3. Install dependencies:
@@ -29,6 +34,8 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```bash
 poetry install
 ```
+
+See [POETRY.md](assets/POETRY.md) for poetry installation instructions.
 
 ## Gmail API Setup
 
@@ -146,6 +153,7 @@ flo opensearch setup --stop
 ```
 
 OpenSearch will be available at:
+
 - OpenSearch API: http://localhost:9200
 - OpenSearch Dashboards: http://localhost:5601
 
