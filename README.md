@@ -1,6 +1,6 @@
 # Florian
 
-This is a Python project that uses the GMail API to download threads of messages and index them for Retrieval Augmented Generation (RAG).
+This is a Python project that uses the GMail API to download threads of messages and index them for Retrieval Augmented Generation (RAG). It includes advanced graph database capabilities through an integrated OpenSearch plugin for modeling and querying email communication networks.
 
 ## System Requirements
 
@@ -201,6 +201,14 @@ flo opensearch search "project deadline" --size 20
    flo opensearch search "important topic"
    ```
 
+## Graph Database Plugin
+
+Florian includes an OpenSearch graph database plugin (located in `src/open-graph-plugin/`) that extends OpenSearch with graph database capabilities for Graph RAG. 
+
+This plugin brings simple graph traversals to OpenSearch.
+
+The plugin is integrated as a git subtree from the [Graphlet-AI/open-graph](https://github.com/Graphlet-AI/open-graph) repository, allowing for independent development while maintaining integration with Florian's email processing pipeline.
+
 ## Data Storage
 
 Fetched threads are saved as JSON files with the following structure:
@@ -225,3 +233,5 @@ Fetched threads are saved as JSON files with the following structure:
   ]
 }
 ```
+
+These JSON structures are then processed and indexed into both the OpenSearch text index for full-text search and the graph database for relationship-based queries.
