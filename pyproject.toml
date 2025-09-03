@@ -1,31 +1,22 @@
-[project]
+[tool.poetry]
 name = "florian"
 version = "0.1.0"
 description = "Experiments in Email and RAG"
-authors = [
-    {name = "Russell Jurney",email = "russell.jurney@gmail.com"}
-]
-license = {text = "COMMERCIAL"}
+authors = ["Russell Jurney <russell.jurney@gmail.com>"]
+license = "COMMERCIAL"
 readme = "README.md"
-requires-python = ">=3.12,<4"
-dependencies = [
-    "google-api-python-client (>=2.181.0,<3.0.0)",
-    "google-auth-httplib2 (>=0.2.0,<0.3.0)",
-    "google-auth-oauthlib (>=1.2.2,<2.0.0)",
-    "click (>=8.2.1,<9.0.0)",
-    "opensearch-py (>=3.0.0,<4.0.0)",
-    "sentence-transformers (>=3.0.0,<4.0.0)",
-    "torch (>=2.0.0,<3.0.0)",
-    "numpy (>=1.24.0,<2.0.0)",
-]
+packages = [{include = "florian", from = "src"}]
 
-
-[project.scripts]
-flo = "florian.cli:cli"
-
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+[tool.poetry.dependencies]
+python = ">=3.12,<4"
+google-api-python-client = ">=2.181.0,<3.0.0"
+google-auth-httplib2 = ">=0.2.0,<0.3.0"
+google-auth-oauthlib = ">=1.2.2,<2.0.0"
+click = ">=8.2.1,<9.0.0"
+opensearch-py = ">=3.0.0,<4.0.0"
+sentence-transformers = ">=3.0.0,<4.0.0"
+torch = ">=2.0.0,<3.0.0"
+numpy = ">=1.24.0,<2.0.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^25.1.0"
@@ -33,6 +24,13 @@ isort = "^6.0.1"
 flake8 = "^7.3.0"
 mypy = "^1.17.1"
 pre-commit = "^4.3.0"
+
+[tool.poetry.scripts]
+flo = "florian.cli:cli"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.mypy]
 python_version = "3.12"
@@ -50,3 +48,10 @@ module = [
     "google.oauth2.*"
 ]
 ignore_missing_imports = true
+
+[tool.black]
+line-length = 100
+
+[tool.isort]
+profile = "black"
+line_length = 100

@@ -144,17 +144,13 @@ class OpenSearchClient:
                     print(f"Deleting existing index: {self.index_name}")
                     self.client.indices.delete(index=self.index_name)
                     print(f"Creating new index: {self.index_name}")
-                    response = self.client.indices.create(
-                        index=self.index_name, body=index_body
-                    )
+                    response = self.client.indices.create(index=self.index_name, body=index_body)
                 else:
                     print(f"Index {self.index_name} already exists")
                     return True
             else:
                 print(f"Creating index: {self.index_name}")
-                response = self.client.indices.create(
-                    index=self.index_name, body=index_body
-                )
+                response = self.client.indices.create(index=self.index_name, body=index_body)
 
             return response.get("acknowledged", False)
 
@@ -236,13 +232,9 @@ class OpenSearchClient:
                 # Add embeddings if present
                 if "embeddings" in message:
                     if "subject_embedding" in message["embeddings"]:
-                        doc_source["subject_embedding"] = message["embeddings"][
-                            "subject_embedding"
-                        ]
+                        doc_source["subject_embedding"] = message["embeddings"]["subject_embedding"]
                     if "body_embedding" in message["embeddings"]:
-                        doc_source["body_embedding"] = message["embeddings"][
-                            "body_embedding"
-                        ]
+                        doc_source["body_embedding"] = message["embeddings"]["body_embedding"]
 
                 doc = {
                     "_index": self.index_name,
@@ -341,9 +333,7 @@ class OpenSearchClient:
                 }
             },
             "min_score": min_score,
-            "_source": {
-                "excludes": ["subject_embedding", "body_embedding", "body_html"]
-            },
+            "_source": {"excludes": ["subject_embedding", "body_embedding", "body_html"]},
         }
 
         try:
@@ -408,9 +398,7 @@ class OpenSearchClient:
                     ]
                 }
             },
-            "_source": {
-                "excludes": ["subject_embedding", "body_embedding", "body_html"]
-            },
+            "_source": {"excludes": ["subject_embedding", "body_embedding", "body_html"]},
             "highlight": {"fields": {"body_text": {}, "subject": {}}},
         }
 
@@ -439,16 +427,10 @@ class OpenSearchClient:
             index_stats = stats_response.get("indices", {}).get(self.index_name, {})
 
             # Get unique threads count
-            thread_agg = {
-                "aggs": {"unique_threads": {"cardinality": {"field": "thread_id"}}}
-            }
-            agg_response = self.client.search(
-                index=self.index_name, body=thread_agg, size=0
-            )
+            thread_agg = {"aggs": {"unique_threads": {"cardinality": {"field": "thread_id"}}}}
+            agg_response = self.client.search(index=self.index_name, body=thread_agg, size=0)
             unique_threads = (
-                agg_response.get("aggregations", {})
-                .get("unique_threads", {})
-                .get("value", 0)
+                agg_response.get("aggregations", {}).get("unique_threads", {}).get("value", 0)
             )
 
             return {

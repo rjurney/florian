@@ -219,9 +219,7 @@ class GmailClient:
                 if data:
                     import base64
 
-                    content = base64.urlsafe_b64decode(data).decode(
-                        "utf-8", errors="ignore"
-                    )
+                    content = base64.urlsafe_b64decode(data).decode("utf-8", errors="ignore")
                     mime_type = payload.get("mimeType", "")
                     if "text/plain" in mime_type:
                         msg_data["body"]["text"] = content
@@ -271,9 +269,7 @@ class GmailClient:
         for i, thread in enumerate(threads):
             thread_info = {
                 "id": thread["id"],
-                "snippet": thread.get("snippet", "")[
-                    :100
-                ],  # First 100 chars of snippet
+                "snippet": thread.get("snippet", "")[:100],  # First 100 chars of snippet
             }
 
             # Optionally fetch the thread metadata to get subject
@@ -292,9 +288,7 @@ class GmailClient:
                         headers = first_msg.get("payload", {}).get("headers", [])
                         for header in headers:
                             if header.get("name", "").lower() == "subject":
-                                thread_info["subject"] = header.get(
-                                    "value", "No subject"
-                                )
+                                thread_info["subject"] = header.get("value", "No subject")
                                 break
                         if "subject" not in thread_info:
                             thread_info["subject"] = "No subject"

@@ -62,9 +62,7 @@ class GmailAuth:
                         "and save as credentials.json"
                     )
 
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    self.credentials_file, SCOPES
-                )
+                flow = InstalledAppFlow.from_client_secrets_file(self.credentials_file, SCOPES)
                 self.creds = flow.run_local_server(port=0)
 
             # Save the credentials for the next run

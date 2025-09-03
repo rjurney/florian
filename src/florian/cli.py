@@ -53,9 +53,7 @@ def auth(credentials):
 @gmail.command()
 @click.option("--query", "-q", default="", help="Gmail search query")
 @click.option("--max-threads", "-n", default=10, help="Maximum threads to fetch")
-@click.option(
-    "--output", "-o", default="data/gmail_threads.json", help="Output JSON file path"
-)
+@click.option("--output", "-o", default="data/gmail_threads.json", help="Output JSON file path")
 def fetch(query, max_threads, output):
     """Fetch Gmail threads."""
     click.echo("Fetching Gmail threads...")
@@ -65,9 +63,7 @@ def fetch(query, max_threads, output):
     client = GmailClient()
 
     try:
-        threads = client.fetch_threads(
-            query=query, max_threads=max_threads, save_to_file=output
-        )
+        threads = client.fetch_threads(query=query, max_threads=max_threads, save_to_file=output)
 
         if not threads:
             click.echo("No threads found")
@@ -147,16 +143,10 @@ def thread(thread_id, output):
 
 
 @gmail.command()
-@click.option(
-    "--query", "-q", default="from:me", help="Gmail search query (default: from:me)"
-)
+@click.option("--query", "-q", default="from:me", help="Gmail search query (default: from:me)")
 @click.option("--max-results", "-n", default=500, help="Maximum threads to search")
-@click.option(
-    "--output", "-o", default="data/thread_ids.json", help="Output file for thread IDs"
-)
-@click.option(
-    "--no-metadata", is_flag=True, help="Skip fetching message subjects (faster)"
-)
+@click.option("--output", "-o", default="data/thread_ids.json", help="Output file for thread IDs")
+@click.option("--no-metadata", is_flag=True, help="Skip fetching message subjects (faster)")
 def search(query, max_results, output, no_metadata):
     """Search for Gmail threads you've participated in."""
     click.echo(f"Searching Gmail threads with query: {query}")
@@ -195,18 +185,14 @@ def search(query, max_results, output, no_metadata):
 
 
 @gmail.command()
-@click.option(
-    "--input", "-i", default="data/thread_ids.json", help="Input file with thread IDs"
-)
+@click.option("--input", "-i", default="data/thread_ids.json", help="Input file with thread IDs")
 @click.option(
     "--output",
     "-o",
     default="data/searched_threads.json",
     help="Output file for thread content",
 )
-@click.option(
-    "--limit", "-l", default=None, type=int, help="Limit number of threads to fetch"
-)
+@click.option("--limit", "-l", default=None, type=int, help="Limit number of threads to fetch")
 def fetch_searched(input, output, limit):
     """Fetch full content for previously searched threads."""
     click.echo(f"Loading thread IDs from {input}...")
@@ -365,9 +351,7 @@ def setup(start, stop, status):
             click.echo(f"✗ Error checking status: {e.stderr}", err=True)
 
     else:
-        click.echo(
-            "Use --start to start OpenSearch, --stop to stop it, or --status to check"
-        )
+        click.echo("Use --start to start OpenSearch, --stop to stop it, or --status to check")
 
 
 @opensearch.command()
@@ -481,15 +465,9 @@ def embeddings():
 
 
 @embeddings.command()
-@click.option(
-    "--input", "-i", default="data/gmail_threads.json", help="Input threads file"
-)
-@click.option(
-    "--output", "-o", default="data/gmail_threads_embedded.json", help="Output file"
-)
-@click.option(
-    "--model", "-m", default="Qwen/Qwen3-Embedding-4B", help="Embedding model name"
-)
+@click.option("--input", "-i", default="data/gmail_threads.json", help="Input threads file")
+@click.option("--output", "-o", default="data/gmail_threads_embedded.json", help="Output file")
+@click.option("--model", "-m", default="Qwen/Qwen3-Embedding-4B", help="Embedding model name")
 def generate(input, output, model):
     """Generate embeddings for email threads."""
     click.echo(f"Loading embedding model: {model}")
@@ -576,9 +554,7 @@ def vector_search(query, size, field):
 @click.argument("query")
 @click.option("--size", "-n", default=10, help="Number of results")
 @click.option("--text-weight", "-t", default=0.3, help="Weight for text search (0-1)")
-@click.option(
-    "--vector-weight", "-v", default=0.7, help="Weight for vector search (0-1)"
-)
+@click.option("--vector-weight", "-v", default=0.7, help="Weight for vector search (0-1)")
 def hybrid_search(query, size, text_weight, vector_weight):
     """Hybrid text + vector search."""
     # Initialize embedder and OpenSearch client
